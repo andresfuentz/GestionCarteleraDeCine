@@ -79,7 +79,8 @@ public class Cine {
                 String cadena = "";
 
                 for (int i = 0; i < listaDePeliculas.size(); i++) {
-                    cadena += (i + 1) + ") " + listaDePeliculas.get(i).getTitulo()
+                    cadena += (i + 1) + ") " + listaDePeliculas.get(i)
+                            .getTitulo()
                             + " (" + listaDePeliculas.get(i).getLanzamiento()
                             + ")\n";
                 }
@@ -237,8 +238,10 @@ public class Cine {
                         cartelera.insertarUnaPelicula(
                             ConexionConApi.encontrarPeliculaPorID(
                             arrayJson.getJSONObject(i).getString("ID")),
-                            Integer.parseInt(arrayJson.getJSONObject(i).getString("c")),
-                            Integer.parseInt(arrayJson.getJSONObject(i).getString("f"))
+                            Integer.parseInt(arrayJson.getJSONObject(i)
+                                    .getString("c")),
+                            Integer.parseInt(arrayJson.getJSONObject(i)
+                                    .getString("f"))
                         );
                     }
 
@@ -257,7 +260,8 @@ public class Cine {
         if (cartelera.hayPeliculasCargadas()) {
             System.out.println(cartelera.toStringCartelera());
 
-            System.out.println("Ingrese los datos de la pelicula correspondiente");
+            System.out.println("Ingrese los datos de la pelicula "
+                    + "correspondiente");
 
             int i, j;
 

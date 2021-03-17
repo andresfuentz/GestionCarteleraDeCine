@@ -3,9 +3,7 @@ package aplicacion;
 import controlador.Cine;
 
 public class Main {
-
     public static void main(String[] args) {
         new Cine().abrir();
     }
-    
 }
