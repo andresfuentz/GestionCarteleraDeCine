@@ -19,11 +19,9 @@ import org.json.JSONObject;
 public class Cine {
 
     private static final String CAMINO = "src\\recursos\\datos_cartelera.json";
-
-    private Cartelera cartelera;
+    private static final Cartelera CARTELERA = new Cartelera();
 
     public Cine() {
-        cartelera = new Cartelera();
     }
 
     public void abrir() {
@@ -36,7 +34,7 @@ public class Cine {
         while (opcion != 99) {
             switch (opcion) {
                 case 1:
-                    mostrarCartelera();
+                    System.out.println(carteleraToString() + "\n");
                     break;
                 case 2:
                     mostrarPelicula();
@@ -52,11 +50,6 @@ public class Cine {
             }
             opcion = menu.getOpcion();
         }
-
-    }
-
-    private void mostrarCartelera() {
-        System.out.println(cartelera.toStringCartelera() + "\n");
     }
 
     private void cargarPelicula() {
@@ -110,18 +103,20 @@ public class Cine {
                     + "pelicula a seleccionar: ") - 1;
         } while (!listaDePeliculas.containsKey(seleccionID));
 
-        System.out.println(cartelera.toStringCartelera() + "\n");
+        System.out.println(carteleraToString() + "\n");
 
         Pelicula p = ConexionConApi.encontrarPeliculaPorID(listaDePeliculas
                         .get(seleccionID).getImdbID());
         
-        cartelera.insertarUnaPelicula(
+        CARTELERA.setUnaPelicula(
                 p,Teclado.leerInt("Ingrese el NUMERO del dia: ", 1, 7) - 1,
                 Teclado.leerInt("Ingrese el NUMERO de la funcion: ", 1, 3) - 1);
         
-        if (cartelera.existeEnLaCartelera(p)) {
+        if (existeEnLaCartelera(p)) {
             System.out.println("\nSE HA CARGADO LA SIGUIENTE PELICULA\n" +
                     p.getTitulo() + " (" + p.getLanzamiento() + ")\n");
+        } else {
+            System.out.println("No se puedo cargar la pelicula!");
         }
     }
 
@@ -144,7 +139,8 @@ public class Cine {
                 }
             } else if (index > 1) {
                 nextPage = Teclado.leerTexto("Pagina anterior (<) - "
-                        + "Pagina siguiente (>) - Salir (n): ").toLowerCase();
+                        + "Pagina siguiente (>) - Seleccionar pelicula (n): ")
+                        .toLowerCase();
 
                 if (nextPage.equals(">")) {
                     index = index + 1;
@@ -176,7 +172,7 @@ public class Cine {
 
         ConexionConApi.buscarPelicula(busqueda, listaDePeliculas, index);
 
-        return nextPage.toLowerCase() + " " + index;
+        return nextPage + " " + index;
     }
 
     private void guardarCambios() {
@@ -184,7 +180,7 @@ public class Cine {
         JSONArray jsonArray = new JSONArray();
 
         ArrayList<String> todasLasPelis
-                = cartelera.arrayDeTodosLosDatosExistentes();
+                = arrayDeTodosLosDatosExistentes();
 
         try (FileWriter file = new FileWriter(CAMINO)) {
             if (!todasLasPelis.isEmpty()) {
@@ -235,7 +231,7 @@ public class Cine {
                     JSONArray arrayJson = new JSONArray(linea);
 
                     for (int i = 0; i < arrayJson.length(); i++) {
-                        cartelera.insertarUnaPelicula(
+                        CARTELERA.setUnaPelicula(
                             ConexionConApi.encontrarPeliculaPorID(
                             arrayJson.getJSONObject(i).getString("ID")),
                             Integer.parseInt(arrayJson.getJSONObject(i)
@@ -257,8 +253,8 @@ public class Cine {
     }
 
     private void mostrarPelicula() {
-        if (cartelera.hayPeliculasCargadas()) {
-            System.out.println(cartelera.toStringCartelera());
+        if (hayPeliculasEnCartelera()) {
+            System.out.println(carteleraToString());
 
             System.out.println("Ingrese los datos de la pelicula "
                     + "correspondiente");
@@ -269,46 +265,153 @@ public class Cine {
                 i = Teclado.leerInt("Ingrese numero del dia: ", 1, 7) - 1;
                 j = Teclado.leerInt("Ingrese numero de la funcion: ", 1, 3) - 1;
 
-                if (cartelera.getUnaPelicula(i, j).getTitulo() == null) {
+                if (CARTELERA.getUnaPelicula(i, j).getTitulo() == null) {
                     System.out.println("______________________________"
                             + "___________________________________"
                             + "\nLos datos no corresponden a una "
                             + "pelicula cargada en la cartelera.\nPor favor "
                             + "vuelva a ingresar los datos.\n");
                 }
-            } while (cartelera.getUnaPelicula(i, j).getTitulo() == null);
+            } while (CARTELERA.getUnaPelicula(i, j).getTitulo() == null);
 
             System.out.println("\nDATOS DE LA PELICULA SOLICITADA\n"
-                    + cartelera.getUnaPelicula(i, j).toString() + "\n");
+                    + CARTELERA.getUnaPelicula(i, j).toString() + "\n");
         } else {
             System.out.println("No hay peliculas cargadas en la cartelera!");
         }
     }
 
     private void eliminarPelicula() {
-        if (cartelera.hayPeliculasCargadas()) {
+        if (hayPeliculasEnCartelera()) {
 
-            System.out.println(cartelera.toStringCartelera());
+            System.out.println(carteleraToString());
 
             System.out.println("Ingrese los datos de la pelicula correspondiente");
 
-            String peliculaEliminada;
+            Pelicula p;
             int i, j;
 
             do {
                 i = Teclado.leerInt("Ingrese el dia de la funcion: ", 1, 7) - 1;
                 j = Teclado.leerInt("Ingrese numero de la funcion: ", 1, 3) - 1;
-            } while (cartelera.getUnaPelicula(i, j).getTitulo() == null);
+                p = CARTELERA.getUnaPelicula(i, j);
+            } while (p == null);
 
-            peliculaEliminada = cartelera.getUnaPelicula(i, j).getTitulo()
-                    + " (" + cartelera.getUnaPelicula(i, j).getLanzamiento() + ")";
-
-            cartelera.eliminarPelicula(i, j);
-
-            System.out.println("\nSE HA ELIMINADO LA SIGUIENTE PELICULA\n"
-                    + peliculaEliminada + "\n");
+            CARTELERA.eliminarPelicula(i, j);
+            
+            if (!existeEnLaCartelera(p)) {
+                System.out.println("\nSE HA ELIMINADO LA SIGUIENTE PELICULA\n"
+                    + p.getTitulo() + " (" + p.getLanzamiento() + ")\n");
+            } else {
+                System.out.println("No se puedo eliminar la pelicula seleccionada!");
+            }
         } else {
             System.out.println("No hay peliculas cargadas en la cartelera!");
         }
     }
+    
+    private ArrayList<String> arrayDeTodosLosDatosExistentes() {
+        ArrayList<String> datosExistentes = new ArrayList();
+
+        for (int i = 0; i < peliculasDeLaCartelera().length; i++) {
+            for (int j = 0; j < peliculasDeLaCartelera()[0].length; j++) {
+                if (peliculasDeLaCartelera()[i][j] != null) {
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getImdbID());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getTitulo());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getDirector());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getLanzamiento());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getTrama());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getElenco());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getPaisOrigen());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getLenguaje());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getDuracion());
+                    datosExistentes.add(peliculasDeLaCartelera()[i][j]
+                            .getImdbRating());
+                    datosExistentes.add(Integer.toString(i));
+                    datosExistentes.add(Integer.toString(j));
+                }
+            }
+        }
+        return datosExistentes;
+    }
+    
+    private String carteleraToString() {
+        String cadena = String.format("|%-32s||%-32s||%-32s||%-32s||%-32s|"
+                + "|%-32s||%-32s||%-32s|",
+                "", "Domingo (Dia 1)", "Lunes (Dia 2)", "Martes (Dia 3)", 
+                "Miercoles (Dia 4)","Jueves (Dia 5)", "Viernes (Dia 6)", 
+                "Sabado (Dia 7)") + "\n";
+        String[] losHorarios = {"16hs", "19hs", "22hs"};
+
+        for (int i = 0; i < peliculasDeLaCartelera().length; i++) {
+            cadena += String.format("|%-32s|", "Funcion " + (i + 1) + " (" 
+                    + losHorarios[i] + ")");
+
+            for (int j = 0; j < peliculasDeLaCartelera()[0].length; j++) {
+
+                if (peliculasDeLaCartelera()[i][j] != null) {
+                    if (peliculasDeLaCartelera()[i][j].getTitulo()
+                            .length() > 30) {
+                        cadena += String.format("|%-32s|", 
+                                peliculasDeLaCartelera()[i][j].getTitulo()
+                                        .substring(0, 30));
+                    } else {
+                        cadena += String.format("|%-32s|", 
+                                peliculasDeLaCartelera()[i][j].getTitulo());
+                    }
+                } else {
+                    cadena += String.format("|%-32s|", "VACIO");
+                }
+            }
+
+            if (i != peliculasDeLaCartelera().length - 1) {
+                cadena += "\n";
+            }
+        }
+        return "\n" + cadena + "\n";
+    }
+    
+    private boolean existeEnLaCartelera(Pelicula laPelicula) {
+        boolean x = false;
+        
+        for (int i = 0; i < peliculasDeLaCartelera().length; i++) {
+            for (int j = 0; j < peliculasDeLaCartelera()[0].length; j++) {
+                if (peliculasDeLaCartelera()[i][j] != null 
+                        && peliculasDeLaCartelera()[i][j].equals(laPelicula)) {
+                    x = true;
+                    break;
+                }
+            }
+        }
+        return x;
+    }
+
+    private boolean hayPeliculasEnCartelera() {
+        boolean x = false;
+
+        for (int i = 0; i < peliculasDeLaCartelera().length; i++) {
+            for (int j = 0; j < peliculasDeLaCartelera()[0].length; j++) {                
+                if (peliculasDeLaCartelera()[i][j] != null) {
+                    x = true;
+                    break;
+                }
+            }
+        }
+        
+        return x;
+    }
+    
+    private Pelicula[][] peliculasDeLaCartelera() {
+        return CARTELERA.getLasPeliculas();
+    }
+    
 }
