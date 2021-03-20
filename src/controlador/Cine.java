@@ -31,6 +31,7 @@ public class Cine {
                 + "Mostrar datos de una pelicula,Cargar pelicula a la cartelera,"
                 + "Eliminar pelicula de la cartelera");
         int opcion = menu.getOpcion();
+        
         while (opcion != 99) {
             switch (opcion) {
                 case 1:
@@ -41,15 +42,14 @@ public class Cine {
                     break;
                 case 3:
                     cargarPelicula();
-                    guardarCambios();
                     break;
                 case 4:
                     eliminarPelicula();
-                    guardarCambios();
                     break;
             }
             opcion = menu.getOpcion();
         }
+        guardarCambios();
     }
 
     private void cargarPelicula() {
